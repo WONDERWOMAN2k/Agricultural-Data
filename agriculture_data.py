@@ -20,6 +20,9 @@ def load_data():
     # Drop duplicate rows
     df.drop_duplicates(inplace=True)
     
+    # Print column names to debug if there's an issue
+    st.write("Column names:", df.columns)
+    
     return df
 
 # Visualizations for the data
@@ -27,21 +30,27 @@ def visualize_data(df):
     st.title("Agricultural Data Visualizations")
 
     # Histogram of Rice Area
-    st.subheader("Distribution of Rice Area")
-    plt.figure(figsize=(10, 5))
-    sns.histplot(df['rice_area_(1000_ha)'], bins=30, kde=True)
-    plt.title("Distribution of Rice Area (1000 ha)")
-    plt.xlabel("Rice Area (1000 ha)")
-    plt.ylabel("Count")
-    st.pyplot(plt)
+    if 'rice_area_(1000_ha)' in df.columns:
+        st.subheader("Distribution of Rice Area")
+        plt.figure(figsize=(10, 5))
+        sns.histplot(df['rice_area_(1000_ha)'], bins=30, kde=True)
+        plt.title("Distribution of Rice Area (1000 ha)")
+        plt.xlabel("Rice Area (1000 ha)")
+        plt.ylabel("Count")
+        st.pyplot(plt)
+    else:
+        st.error("Column 'rice_area_(1000_ha)' not found!")
 
     # Boxplot for Rice Yield
-    st.subheader("Boxplot of Rice Yield")
-    plt.figure(figsize=(8, 5))
-    sns.boxplot(y=df['rice_yield_(kg_per_ha)'])
-    plt.title("Boxplot of Rice Yield")
-    plt.ylabel("Rice Yield (kg per ha)")
-    st.pyplot(plt)
+    if 'rice_yield_(kg_per_ha)' in df.columns:
+        st.subheader("Boxplot of Rice Yield")
+        plt.figure(figsize=(8, 5))
+        sns.boxplot(y=df['rice_yield_(kg_per_ha)'])
+        plt.title("Boxplot of Rice Yield")
+        plt.ylabel("Rice Yield (kg per ha)")
+        st.pyplot(plt)
+    else:
+        st.error("Column 'rice_yield_(kg_per_ha)' not found!")
 
     # Correlation Heatmap
     st.subheader("Correlation Heatmap")
@@ -52,25 +61,31 @@ def visualize_data(df):
 
     # Trend of Rice and Wheat Production over the Years
     st.subheader("Rice and Wheat Production Over Time")
-    plt.figure(figsize=(12, 6))
-    sns.lineplot(x='year', y='rice_production_(1000_tons)', data=df, label="Rice Production", marker="o")
-    sns.lineplot(x='year', y='wheat_production_(1000_tons)', data=df, label="Wheat Production", marker="s")
-    plt.title("Trend of Rice and Wheat Production Over the Years")
-    plt.xlabel("Year")
-    plt.ylabel("Production (1000 Tons)")
-    plt.legend()
-    st.pyplot(plt)
+    if 'year' in df.columns and 'rice_production_(1000_tons)' in df.columns and 'wheat_production_(1000_tons)' in df.columns:
+        plt.figure(figsize=(12, 6))
+        sns.lineplot(x='year', y='rice_production_(1000_tons)', data=df, label="Rice Production", marker="o")
+        sns.lineplot(x='year', y='wheat_production_(1000_tons)', data=df, label="Wheat Production", marker="s")
+        plt.title("Trend of Rice and Wheat Production Over the Years")
+        plt.xlabel("Year")
+        plt.ylabel("Production (1000 Tons)")
+        plt.legend()
+        st.pyplot(plt)
+    else:
+        st.error("Columns 'year', 'rice_production_(1000_tons)', or 'wheat_production_(1000_tons)' not found!")
 
     # Bar chart of Top 5 States by Rice Production
     st.subheader("Top 5 States by Rice Production")
-    top_states = df.groupby('state_name')['rice_production_(1000_tons)'].sum().nlargest(5)
-    plt.figure(figsize=(10, 5))
-    top_states.plot(kind='bar', color='skyblue')
-    plt.title("Top 5 States by Rice Production")
-    plt.xlabel("State")
-    plt.ylabel("Total Rice Production (1000 Tons)")
-    plt.xticks(rotation=45)
-    st.pyplot(plt)
+    if 'state_name' in df.columns and 'rice_production_(1000_tons)' in df.columns:
+        top_states = df.groupby('state_name')['rice_production_(1000_tons)'].sum().nlargest(5)
+        plt.figure(figsize=(10, 5))
+        top_states.plot(kind='bar', color='skyblue')
+        plt.title("Top 5 States by Rice Production")
+        plt.xlabel("State")
+        plt.ylabel("Total Rice Production (1000 Tons)")
+        plt.xticks(rotation=45)
+        st.pyplot(plt)
+    else:
+        st.error("Columns 'state_name' or 'rice_production_(1000_tons)' not found!")
 
 # Database connection to TiDB Cloud
 def connect_to_database():
