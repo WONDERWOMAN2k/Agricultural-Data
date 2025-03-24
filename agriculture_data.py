@@ -7,7 +7,7 @@ Original file is located at
     https://colab.research.google.com/drive/1SmtXmhwkozlYAFoSyUkTeHH35FGELRgY
 """
 
-!pip install pandas numpy matplotlib seaborn plotly mysql-connector-python sqlalchemy
+
 
 from google.colab import files
 
