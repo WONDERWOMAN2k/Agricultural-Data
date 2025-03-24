@@ -2,13 +2,20 @@
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from google.colab import files  # Only necessary in Google Colab
+
+# Upload the file (this will open a file picker)
+uploaded = files.upload()
+
+# Once uploaded, the file will be in the current directory
+data_file_path = list(uploaded.keys())[0]  # This will get the uploaded file's name
 
 # Load the dataset
 try:
-    df = pd.read_csv('Agricultural Data.csv')
+    df = pd.read_csv(data_file_path)
     print("Data loaded successfully!")
 except FileNotFoundError:
-    print("Error: The file 'Agricultural Data.csv' was not found.")
+    print(f"Error: The file '{data_file_path}' was not found.")
     exit()
 
 # Clean column names by replacing spaces with underscores, removing parentheses, and converting to lowercase
