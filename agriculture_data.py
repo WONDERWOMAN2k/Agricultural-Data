@@ -1,127 +1,123 @@
-import streamlit as st
+# Import necessary libraries
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import seaborn as sns
-import mysql.connector
+import matplotlib.pyplot as plt
 
-# Load and clean the data
-def load_data():
-    df = pd.read_csv('agriculture_data.csv')
-    st.write("Raw Data", df.head())
+# Load the dataset
+df = pd.read_csv('Agricultural Data.csv')
 
-    # Handle missing values for numerical and categorical columns
-    df.fillna(df.select_dtypes(include=['number']).median(), inplace=True)
-    df.fillna(df.select_dtypes(include=['object']).mode().iloc[0], inplace=True)
-    
-    # Convert column names to lowercase and replace spaces with underscores
-    df.columns = df.columns.str.lower().str.replace(' ', '_')
-    
-    # Drop duplicate rows
-    df.drop_duplicates(inplace=True)
-    
-    # Print column names to debug if there's an issue
-    st.write("Column names:", df.columns)
-    
-    return df
+# Clean column names by replacing spaces with underscores, removing parentheses, and converting to lowercase
+df.columns = df.columns.str.replace(' ', '_').str.replace('(', '').str.replace(')', '').str.lower()
 
-# Visualizations for the data
-def visualize_data(df):
-    st.title("Agricultural Data Visualizations")
+# Check the updated column names to confirm changes
+print(df.columns)
 
-    # Histogram of Rice Area
-    if 'rice_area_(1000_ha)' in df.columns:
-        st.subheader("Distribution of Rice Area")
-        plt.figure(figsize=(10, 5))
-        sns.histplot(df['rice_area_(1000_ha)'], bins=30, kde=True)
-        plt.title("Distribution of Rice Area (1000 ha)")
-        plt.xlabel("Rice Area (1000 ha)")
-        plt.ylabel("Count")
-        st.pyplot(plt)
-    else:
-        st.error("Column 'rice_area_(1000_ha)' not found!")
+# ----------- CORRELATION HEATMAP -----------
+# Calculate the correlation matrix
+correlation_matrix = df.corr()
 
-    # Boxplot for Rice Yield
-    if 'rice_yield_(kg_per_ha)' in df.columns:
-        st.subheader("Boxplot of Rice Yield")
-        plt.figure(figsize=(8, 5))
-        sns.boxplot(y=df['rice_yield_(kg_per_ha)'])
-        plt.title("Boxplot of Rice Yield")
-        plt.ylabel("Rice Yield (kg per ha)")
-        st.pyplot(plt)
-    else:
-        st.error("Column 'rice_yield_(kg_per_ha)' not found!")
+# Plot the heatmap
+plt.figure(figsize=(12, 8))
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5)
+plt.title("Correlation Heatmap of Agricultural Data")
+plt.show()
 
-    # Correlation Heatmap
-    st.subheader("Correlation Heatmap")
-    plt.figure(figsize=(12, 6))
-    sns.heatmap(df.select_dtypes(include=['number']).corr(), annot=True, cmap='coolwarm', fmt=".2f")
-    plt.title("Correlation Heatmap (Numerical Features)")
-    st.pyplot(plt)
+# ----------- RICE AND WHEAT PRODUCTION OVER TIME -----------
+# Plot rice and wheat production over time
+plt.figure(figsize=(10, 6))
+plt.plot(df['year'], df['rice_production_1000_tons'], label='Rice Production (1000 tons)', color='green')
+plt.plot(df['year'], df['wheat_production_1000_tons'], label='Wheat Production (1000 tons)', color='orange')
+plt.xlabel('Year')
+plt.ylabel('Production (1000 tons)')
+plt.title('Rice and Wheat Production Over Time')
+plt.legend()
+plt.show()
 
-    # Trend of Rice and Wheat Production over the Years
-    st.subheader("Rice and Wheat Production Over Time")
-    if 'year' in df.columns and 'rice_production_(1000_tons)' in df.columns and 'wheat_production_(1000_tons)' in df.columns:
-        plt.figure(figsize=(12, 6))
-        sns.lineplot(x='year', y='rice_production_(1000_tons)', data=df, label="Rice Production", marker="o")
-        sns.lineplot(x='year', y='wheat_production_(1000_tons)', data=df, label="Wheat Production", marker="s")
-        plt.title("Trend of Rice and Wheat Production Over the Years")
-        plt.xlabel("Year")
-        plt.ylabel("Production (1000 Tons)")
-        plt.legend()
-        st.pyplot(plt)
-    else:
-        st.error("Columns 'year', 'rice_production_(1000_tons)', or 'wheat_production_(1000_tons)' not found!")
+# ----------- TOP 5 STATES BY RICE PRODUCTION -----------
+# Group by state and sum the rice production
+top_states = df.groupby('state_name')['rice_production_1000_tons'].sum().nlargest(5)
 
-    # Bar chart of Top 5 States by Rice Production
-    st.subheader("Top 5 States by Rice Production")
-    if 'state_name' in df.columns and 'rice_production_(1000_tons)' in df.columns:
-        top_states = df.groupby('state_name')['rice_production_(1000_tons)'].sum().nlargest(5)
-        plt.figure(figsize=(10, 5))
-        top_states.plot(kind='bar', color='skyblue')
-        plt.title("Top 5 States by Rice Production")
-        plt.xlabel("State")
-        plt.ylabel("Total Rice Production (1000 Tons)")
-        plt.xticks(rotation=45)
-        st.pyplot(plt)
-    else:
-        st.error("Columns 'state_name' or 'rice_production_(1000_tons)' not found!")
+# Plot the top 5 states
+plt.figure(figsize=(10, 6))
+top_states.plot(kind='bar', color='blue')
+plt.xlabel('State')
+plt.ylabel('Rice Production (1000 tons)')
+plt.title('Top 5 States by Rice Production')
+plt.xticks(rotation=45)
+plt.show()
 
-# Database connection to TiDB Cloud
-def connect_to_database():
-    conn = mysql.connector.connect(
-        host="gateway01.us-west-2.prod.aws.tidbcloud.com",
-        port=4000,
-        user="2cG3MBTK8AjfDHM.root",
-        password="dYaKCArJUfrmgU85",  # Replace with actual password
-        database="AgriData"
-    )
-    return conn
+# ----------- RICE YIELD DISTRIBUTION -----------
+# Plot the distribution of rice yield
+plt.figure(figsize=(10, 6))
+sns.histplot(df['rice_yield_kg_per_ha'], bins=20, kde=True, color='green')
+plt.title('Rice Yield Distribution (Kg per ha)')
+plt.xlabel('Rice Yield (Kg per ha)')
+plt.ylabel('Frequency')
+plt.show()
 
-# Fetch data from TiDB Cloud
-def fetch_data_from_db(conn):
-    query = "SELECT * FROM Crop_Production;"
-    df = pd.read_sql(query, conn)
-    return df
+# ----------- RICE AND WHEAT AREA VS PRODUCTION -----------
+# Plot rice area vs production
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=df['rice_area_1000_ha'], y=df['rice_production_1000_tons'], color='green')
+plt.title('Rice Area vs Rice Production')
+plt.xlabel('Rice Area (1000 ha)')
+plt.ylabel('Rice Production (1000 tons)')
+plt.show()
 
-# Main Streamlit app
-def main():
-    st.title("Agricultural Data Exploration")
+# Plot wheat area vs production
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=df['wheat_area_1000_ha'], y=df['wheat_production_1000_tons'], color='orange')
+plt.title('Wheat Area vs Wheat Production')
+plt.xlabel('Wheat Area (1000 ha)')
+plt.ylabel('Wheat Production (1000 tons)')
+plt.show()
 
-    # Upload CSV or connect to TiDB Cloud
-    option = st.selectbox("Select Data Source", ["Upload CSV", "Connect to TiDB Cloud"])
+# ----------- TOP 5 STATES BY WHEAT PRODUCTION -----------
+# Group by state and sum the wheat production
+top_wheat_states = df.groupby('state_name')['wheat_production_1000_tons'].sum().nlargest(5)
 
-    if option == "Upload CSV":
-        uploaded_file = st.file_uploader("Choose a CSV file", type=["csv"])
-        if uploaded_file is not None:
-            df = pd.read_csv(uploaded_file)
-            st.write("Data loaded successfully!")
-            visualize_data(df)
-    elif option == "Connect to TiDB Cloud":
-        conn = connect_to_database()
-        st.write("Connected to TiDB Cloud!")
-        df = fetch_data_from_db(conn)
-        visualize_data(df)
+# Plot the top 5 states for wheat production
+plt.figure(figsize=(10, 6))
+top_wheat_states.plot(kind='bar', color='orange')
+plt.xlabel('State')
+plt.ylabel('Wheat Production (1000 tons)')
+plt.title('Top 5 States by Wheat Production')
+plt.xticks(rotation=45)
+plt.show()
 
-if __name__ == "__main__":
-    main()
+# ----------- MAIZE AREA AND PRODUCTION -----------
+# Plot maize area vs production
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x=df['maize_area_1000_ha'], y=df['maize_production_1000_tons'], color='yellow')
+plt.title('Maize Area vs Maize Production')
+plt.xlabel('Maize Area (1000 ha)')
+plt.ylabel('Maize Production (1000 tons)')
+plt.show()
+
+# ----------- CROPS AREA AND PRODUCTION COMPARISON -----------
+# Select relevant columns for different crops
+crops_data = df[['year', 'state_name', 'rice_area_1000_ha', 'wheat_area_1000_ha', 'maize_area_1000_ha', 
+                 'rice_production_1000_tons', 'wheat_production_1000_tons', 'maize_production_1000_tons']]
+
+# Plot crops area vs production for each crop
+plt.figure(figsize=(12, 8))
+plt.subplot(2, 2, 1)
+plt.scatter(crops_data['rice_area_1000_ha'], crops_data['rice_production_1000_tons'], color='green')
+plt.title('Rice Area vs Rice Production')
+plt.xlabel('Rice Area (1000 ha)')
+plt.ylabel('Rice Production (1000 tons)')
+
+plt.subplot(2, 2, 2)
+plt.scatter(crops_data['wheat_area_1000_ha'], crops_data['wheat_production_1000_tons'], color='orange')
+plt.title('Wheat Area vs Wheat Production')
+plt.xlabel('Wheat Area (1000 ha)')
+plt.ylabel('Wheat Production (1000 tons)')
+
+plt.subplot(2, 2, 3)
+plt.scatter(crops_data['maize_area_1000_ha'], crops_data['maize_production_1000_tons'], color='yellow')
+plt.title('Maize Area vs Maize Production')
+plt.xlabel('Maize Area (1000 ha)')
+plt.ylabel('Maize Production (1000 tons)')
+
+plt.tight_layout()
+plt.show()
