@@ -18,6 +18,29 @@ def connect_to_database():
     except mysql.connector.Error as err:
         st.write(f"Error: {err}")
         return None
+# Existing function in agriculture_data.py (around line 37)
+def visualize_data(df):
+    """Generates and displays data visualizations."""
+    if df.empty:
+        st.write("No data available for visualization.")
+        return
+    
+    numeric_cols = df.select_dtypes(include=['number']).columns
+    if len(numeric_cols) == 0:
+        st.write("Error: No numerical data available for correlation heatmap.")
+        return
+    
+    # Drop non-numeric columns
+    df_numeric = df[numeric_cols].copy()
+
+    # Handle NaN values to avoid errors
+    df_numeric = df_numeric.dropna()
+
+    # Correlation heatmap
+    st.subheader("Correlation Heatmap")
+    plt.figure(figsize=(10, 6))
+    sns.heatmap(df_numeric.corr(), annot=True, cmap='coolwarm', fmt='.2f')
+    st.pyplot(plt)
 
 # Function to fetch data from TiDB Cloud
 def fetch_data_from_db(conn):
