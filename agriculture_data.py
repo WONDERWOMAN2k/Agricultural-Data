@@ -23,7 +23,8 @@ def connect_to_database():
 def fetch_data_from_db(conn):
     try:
         query = "SELECT * FROM Crop_Production;"
-        df = pd.read_sql_query(query, conn)
+        df = pd.read_sql(query, conn)  # Corrected `read_sql_query` to `read_sql`
+        conn.close()  # Close connection after fetching data
         return df
     except Exception as e:
         st.error(f"Error fetching data: {e}")
@@ -73,4 +74,13 @@ def visualize_data(df):
 
 # Main Streamlit app
 def main():
-    st.title
+    st.title("AgriData Explorer - Indian Agriculture Insights")  # Fixed `st.title`
+
+    # Connect to Database
+    conn = connect_to_database()
+    if conn:
+        df = fetch_data_from_db(conn)
+        visualize_data(df)
+
+if __name__ == "__main__":
+    main()
