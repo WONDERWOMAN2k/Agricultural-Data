@@ -44,4 +44,8 @@ venv.bak/
 
 # Logs and temporary files
 *.log
+git add agriculture_data.py
+git commit -m "Fixed correlation matrix issue in visualize_data function"
+git push origin main
+
 
