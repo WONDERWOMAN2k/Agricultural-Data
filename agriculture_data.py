@@ -11,8 +11,9 @@ DB_CONFIG = {
     'host': 'gateway01.us-west-2.prod.aws.tidbcloud.com',
     'port': 4000,
     'database': 'AgriData',
-    'ssl_ca': '/content/ca.pem'  # Make sure ca.pem is in your working directory
+    'ssl_ca': 'ca.pem'  # Correct relative path for Streamlit Cloud
 }
+
 
 # Connect to TiDB Cloud
 def connect_db():
