@@ -80,8 +80,11 @@ def main():
 
                 if "year" in df.columns and df["year"].notnull().any():
                     min_year, max_year = int(df["year"].min()), int(df["year"].max())
-                    selected_years = st.slider("Select Year Range", min_year, max_year, (min_year, max_year))
-                    df = df[(df["year"] >= selected_years[0]) & (df["year"] <= selected_years[1])]
+                    if min_year < max_year:
+                        selected_years = st.slider("Select Year Range", min_year, max_year, (min_year, max_year))
+                        df = df[(df["year"] >= selected_years[0]) & (df["year"] <= selected_years[1])]
+                    else:
+                        st.info(f"📅 Only data for the year {min_year} available.")
 
             # -----------------------
             # ✅ Summary & Visuals
@@ -98,11 +101,27 @@ def main():
             else:
                 st.warning("⚠️ No numerical data available for correlation.")
 
-            # 📊 Yield Trend
-            if "year" in df.columns and "yield_kg_per_ha" in df.columns:
-                st.subheader("🌱 Yield Trend Over Years")
-                trend = df.groupby("year")["yield_kg_per_ha"].mean().reset_index()
-                st.line_chart(trend.set_index("year"))
+            # -----------------------
+            # 📊 Table-Specific Charts
+            # -----------------------
+            if table == "Crop_Production":
+                if "year" in df.columns and "yield_kg_per_ha" in df.columns:
+                    st.subheader("🌱 Yield Trend Over Years")
+                    trend = df.groupby("year")["yield_kg_per_ha"].mean().reset_index()
+                    st.line_chart(trend.set_index("year"))
+
+            elif table == "Weather_Data":
+                if "year" in df.columns and "rainfall" in df.columns:
+                    st.subheader("🌧️ Rainfall Trend Over Years")
+                    trend = df.groupby("year")["rainfall"].mean().reset_index()
+                    st.line_chart(trend.set_index("year"))
+
+            elif table == "Soil_Quality":
+                if "ph_value" in df.columns:
+                    st.subheader("🧪 Soil pH Distribution")
+                    fig, ax = plt.subplots()
+                    sns.histplot(df["ph_value"].dropna(), kde=True, ax=ax)
+                    st.pyplot(fig)
         else:
             st.warning("⚠️ No data found or empty table.")
 
