@@ -3,19 +3,23 @@ import pandas as pd
 import mysql.connector
 import seaborn as sns
 import matplotlib.pyplot as plt
+import os
 
-# Updated TiDB Cloud Database Config
+# -----------------------
+# ✅ TiDB Cloud Config
+# -----------------------
 DB_CONFIG = {
     'user': '2cG3MBTK8AjfDHM.root',
-    'password': 'Mi9z7bZhmQT5CXpY',
+    'password': 'GNrddcP3aTtbSHkp',  # Correct password
     'host': 'gateway01.us-west-2.prod.aws.tidbcloud.com',
     'port': 4000,
     'database': 'AgriData',
-    'ssl_ca': 'ca.pem'  # Correct relative path for Streamlit Cloud
+    'ssl_ca': os.path.join(os.path.dirname(__file__), 'ca.pem')  # Make sure ca.pem is in the repo!
 }
 
-
-# Connect to TiDB Cloud
+# -----------------------
+# ✅ Connect to TiDB
+# -----------------------
 def connect_db():
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
@@ -24,19 +28,28 @@ def connect_db():
         st.error(f"❌ Database connection failed: {e}")
         return None
 
-# Cached function to fetch data
+# -----------------------
+# ✅ Fetch Data Function (cached)
+# -----------------------
 @st.cache_data
 def fetch_data(query):
     conn = connect_db()
     if conn:
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute(query)
-        data = cursor.fetchall()
-        conn.close()
-        return pd.DataFrame(data)
-    return None
+        try:
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute(query)
+            data = cursor.fetchall()
+            return pd.DataFrame(data)
+        except Exception as e:
+            st.error(f"❌ Query failed: {e}")
+            return pd.DataFrame()
+        finally:
+            conn.close()
+    return pd.DataFrame()
 
-# Streamlit App Logic
+# -----------------------
+# ✅ Main Streamlit App
+# -----------------------
 def main():
     st.set_page_config(page_title="AgriData Explorer", layout="wide")
     st.title("🌾 AgriData Explorer - Powered by TiDB Cloud")
@@ -54,6 +67,9 @@ def main():
             st.subheader("🔍 Data Preview")
             st.dataframe(df.head(10), use_container_width=True)
 
+            # -----------------------
+            # ✅ Filtering
+            # -----------------------
             with st.expander("🔎 Filter Data"):
                 if "state_name" in df.columns:
                     selected_state = st.selectbox("State", df["state_name"].dropna().unique())
@@ -64,6 +80,9 @@ def main():
                     selected_years = st.slider("Select Year Range", min_year, max_year, (min_year, max_year))
                     df = df[(df["year"] >= selected_years[0]) & (df["year"] <= selected_years[1])]
 
+            # -----------------------
+            # ✅ Summary & Visuals
+            # -----------------------
             st.subheader("📈 Summary Statistics")
             st.write(df.describe())
 
@@ -74,8 +93,9 @@ def main():
                 sns.heatmap(numeric_df.corr(), annot=True, cmap="YlGnBu", fmt=".2f", ax=ax)
                 st.pyplot(fig)
             else:
-                st.warning("No numerical data for correlation.")
+                st.warning("⚠️ No numerical data for correlation.")
 
+            # Yield Trend
             if "year" in df.columns and "yield_kg_per_ha" in df.columns:
                 st.subheader("🌱 Yield Trend Over Years")
                 trend = df.groupby("year")["yield_kg_per_ha"].mean().reset_index()
