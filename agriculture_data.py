@@ -10,11 +10,11 @@ import os
 # -----------------------
 DB_CONFIG = {
     'user': '2cG3MBTK8AjfDHM.root',
-    'password': 'GNrddcP3aTtbSHkp',  # Correct password
+    'password': 'GNrddcP3aTtbSHkp',
     'host': 'gateway01.us-west-2.prod.aws.tidbcloud.com',
     'port': 4000,
     'database': 'AgriData',
-    'ssl_ca': os.path.join(os.path.dirname(__file__), 'ca.pem')  # Make sure ca.pem is in the repo!
+    'ssl_ca': os.path.join(os.path.dirname(__file__), 'ca.pem')  # Ensure ca.pem is uploaded to GitHub
 }
 
 # -----------------------
@@ -22,6 +22,9 @@ DB_CONFIG = {
 # -----------------------
 def connect_db():
     try:
+        if not os.path.exists(DB_CONFIG['ssl_ca']):
+            st.error("❌ SSL CA file 'ca.pem' not found. Please upload it to the repo.")
+            return None
         conn = mysql.connector.connect(**DB_CONFIG)
         return conn
     except Exception as e:
@@ -61,7 +64,7 @@ def main():
         query = f"SELECT * FROM {table} LIMIT 1000;"
         df = fetch_data(query)
 
-        if df is not None and not df.empty:
+        if not df.empty:
             df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_")
 
             st.subheader("🔍 Data Preview")
@@ -75,7 +78,7 @@ def main():
                     selected_state = st.selectbox("State", df["state_name"].dropna().unique())
                     df = df[df["state_name"] == selected_state]
 
-                if "year" in df.columns:
+                if "year" in df.columns and df["year"].notnull().any():
                     min_year, max_year = int(df["year"].min()), int(df["year"].max())
                     selected_years = st.slider("Select Year Range", min_year, max_year, (min_year, max_year))
                     df = df[(df["year"] >= selected_years[0]) & (df["year"] <= selected_years[1])]
@@ -93,9 +96,9 @@ def main():
                 sns.heatmap(numeric_df.corr(), annot=True, cmap="YlGnBu", fmt=".2f", ax=ax)
                 st.pyplot(fig)
             else:
-                st.warning("⚠️ No numerical data for correlation.")
+                st.warning("⚠️ No numerical data available for correlation.")
 
-            # Yield Trend
+            # 📊 Yield Trend
             if "year" in df.columns and "yield_kg_per_ha" in df.columns:
                 st.subheader("🌱 Yield Trend Over Years")
                 trend = df.groupby("year")["yield_kg_per_ha"].mean().reset_index()
